@@ -1,24 +1,28 @@
 async function sendMessage() {
   const input = document.getElementById("userInput");
-  const msgBox = document.getElementById("messages");
+  const message = input.value.trim();
+  if (!message) return;
 
-  let userMsg = input.value.trim();
-  if (!userMsg) return;
-
-  msgBox.innerHTML += `<div class="msg-user"><b>👤 أنت:</b> ${userMsg}</div>`;
+  // عرض رسالة المستخدم
+  const messagesDiv = document.getElementById("messages");
+  messagesDiv.innerHTML += `<div class="msg user">👤 ${message}</div>`;
   input.value = "";
 
   try {
-    const res = await fetch("https://YOUR_BACKEND_URL.onrailway.app/api/query", {
+    // استدعاء الـ backend
+    const res = await fetch("/api/query", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ question: userMsg })
+      body: JSON.stringify({ message })
     });
-    const data = await res.json();
 
-    msgBox.innerHTML += `<div class="msg-bot"><b>🤖 Dobby:</b> ${data.answer}</div>`;
-    msgBox.scrollTop = msgBox.scrollHeight;
+    const data = await res.json();
+    const reply = data.reply || "Dobby didn’t respond 😅";
+
+    messagesDiv.innerHTML += `<div class="msg bot">🤖 ${reply}</div>`;
+    messagesDiv.scrollTop = messagesDiv.scrollHeight; // ينزل لآخر الشات
   } catch (err) {
-    msgBox.innerHTML += `<div class="msg-bot"><b>🤖 Dobby:</b> حصل خطأ في الاتصال بالسيرفر</div>`;
+    console.error(err);
+    messagesDiv.innerHTML += `<div class="msg bot">❌ Error connecting to Dobby</div>`;
   }
 }
