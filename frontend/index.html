@@ -1,16 +1,26 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Dobby Tourist AI</title>
-  <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dobby AI Tourist Assistant</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f8f8f8; }
+    #chat { width: 400px; margin: 30px auto; background: white; border-radius: 10px; padding: 20px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    #messages { height: 300px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; }
+    .msg { margin: 5px 0; }
+    .user { text-align: right; color: blue; }
+    .bot { text-align: left; color: green; }
+    input { width: 80%; padding: 8px; }
+    button { padding: 8px; }
+  </style>
 </head>
 <body>
-  <div id="chatbox">
-    <h2>🧳 Dobby Tourist AI</h2>
+  <div id="chat">
+    <h2>🧙‍♂️ Dobby Tourist AI</h2>
     <div id="messages"></div>
-    <input id="userInput" type="text" placeholder="اسأل عن مطعم أو كافيه أو محطة..." />
-    <button onclick="sendMessage()">إرسال</button>
+    <input type="text" id="userInput" placeholder="Ask Dobby about cafes, routes, etc..." />
+    <button onclick="sendMessage()">Send</button>
   </div>
   <script src="script.js"></script>
 </body>
