@@ -1,30 +1,29 @@
+// services/foursquare.js
 import axios from "axios";
 
 const FOURSQUARE_API_KEY = process.env.FOURSQUARE_API_KEY;
 
-export async function searchPlaces(query, location) {
+export async function searchPlaces(query, lat, lon) {
   try {
-    const { lat, lon } = location || { lat: 30.0444, lon: 31.2357 }; // Default: Cairo
-
-    const url = `https://api.foursquare.com/v3/places/search?query=${encodeURIComponent(
-      query
-    )}&ll=${lat},${lon}&limit=5`;
-
-    const response = await axios.get(url, {
+    const res = await axios.get("https://api.foursquare.com/v3/places/search", {
       headers: {
         Authorization: FOURSQUARE_API_KEY,
       },
+      params: {
+        query,
+        ll: `${lat},${lon}`,
+        radius: 2000, // متر
+        limit: 5,
+      },
     });
 
-    const places = response.data.results.map((p) => ({
-      name: p.name,
-      address: p.location.formatted_address,
-      categories: p.categories?.map((c) => c.name).join(", ") || "N/A",
+    return res.data.results.map(place => ({
+      name: place.name,
+      address: place.location.formatted_address,
+      category: place.categories[0]?.name || "N/A"
     }));
-
-    return { type: "places", data: places };
   } catch (err) {
-    console.error("❌ Foursquare error:", err.message);
-    return { error: "Failed to fetch places" };
+    console.error("Foursquare error:", err.response?.data || err.message);
+    return [];
   }
 }
