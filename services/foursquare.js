@@ -3,11 +3,11 @@ import axios from "axios";
 
 const FOURSQUARE_API_KEY = process.env.FOURSQUARE_API_KEY;
 
-export async function searchPlaces(query, lat, lon) {
+export async function searchNearby(lat, lon, query = "restaurant") {
   try {
     const res = await axios.get("https://api.foursquare.com/v3/places/search", {
       headers: {
-        Authorization: FOURSQUARE_API_KEY,
+        Authorization: `Bearer ${FOURSQUARE_API_KEY}`,
       },
       params: {
         query,
@@ -17,13 +17,25 @@ export async function searchPlaces(query, lat, lon) {
       },
     });
 
-    return res.data.results.map(place => ({
+    const places = res.data.results.map((place) => ({
       name: place.name,
-      address: place.location.formatted_address,
-      category: place.categories[0]?.name || "N/A"
+      address: place.location.formatted_address || "No address",
+      category: place.categories[0]?.name || "N/A",
     }));
+
+    // نحولها لرد نصي للشات
+    if (places.length === 0) {
+      return "😔 مفيش أماكن قريبة اتعثر عليها دلوقتي.";
+    }
+
+    let reply = "📍 أقرب الأماكن ليك:\n";
+    places.forEach((p, i) => {
+      reply += `\n${i + 1}. ${p.name} (${p.category})\n   ${p.address}`;
+    });
+
+    return reply;
   } catch (err) {
     console.error("Foursquare error:", err.response?.data || err.message);
-    return [];
+    return "⚠️ حصل خطأ أثناء جلب الأماكن من Foursquare.";
   }
 }
