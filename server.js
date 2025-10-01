@@ -1,9 +1,12 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
+
+import { askDobby } from "./services/dobby.js";
 import { searchPlaces } from "./services/foursquare.js";
 import { getRoute } from "./services/geoapify.js";
-import { askDobby } from "./services/dobby.js";
 
 dotenv.config();
 
@@ -11,53 +14,43 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const PORT = process.env.PORT || 3000;
+// إعداد المسار علشان نقدر نستخدم __dirname في ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-// ✅ Route رئيسي للتجربة
-app.get("/", (req, res) => {
-  res.send("🧙‍♂️ Dobby is alive 👋 - Backend is running!");
-});
+// ✅ تقديم ملفات frontend
+app.use(express.static(path.join(__dirname, "frontend")));
 
-// ✅ API رئيسي للتعامل مع Dobby والـ APIs
+// 🧩 API Endpoint
 app.post("/api/query", async (req, res) => {
   const { message, lat, lon } = req.body;
 
-  if (!message) {
-    return res.status(400).json({ error: "Message is required" });
-  }
-
   try {
-    // 1️⃣ نخلي Dobby يحلل السؤال
-    const aiResponse = await askDobby(message);
-
-    let data = null;
-
-    // 2️⃣ لو السؤال فيه "مطعم" أو "كافيه" → نجيب من Foursquare
-    if (/مطعم|restaurant|كافيه|cafe/i.test(message)) {
-      data = await searchPlaces("restaurant", lat, lon);
+    // مثال بسيط: لو السؤال فيه "مطعم" → استخدم Foursquare
+    if (message.includes("مطعم") || message.toLowerCase().includes("restaurant")) {
+      const places = await searchPlaces("restaurant", lat, lon);
+      return res.json({ reply: `دول أقرب مطاعم: ${places}` });
     }
 
-    // 3️⃣ لو السؤال فيه "طريق" أو "اتجاه" → نجيب من Geoapify
-    else if (/طريق|اتجاه|route/i.test(message)) {
-      if (lat && lon) {
-        // ✨ كمثال: نخلي الاتجاه من موقع المستخدم لميدان التحرير (القاهرة)
-        data = await getRoute(lat, lon, 30.0444, 31.2357);
-      } else {
-        data = "⚠️ لازم تبعت إحداثيات علشان أجيبلك الطريق.";
-      }
+    // مثال: لو السؤال فيه "طريق" أو "اتجاه"
+    if (message.includes("طريق") || message.toLowerCase().includes("route")) {
+      const route = await getRoute(lat, lon, 50.45, 30.52); // (مكان افتراضي مؤقت)
+      return res.json({ reply: `ده الطريق: ${route}` });
     }
 
-    res.json({
-      ai: aiResponse,
-      data: data || []
-    });
-  } catch (err) {
-    console.error("❌ Query error:", err.message);
-    res.status(500).json({ error: "Something went wrong on the server" });
+    // غير كده → رجّع رد AI
+    const reply = await askDobby(message);
+    res.json({ reply });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ reply: "❌ حصل خطأ في السيرفر." });
   }
 });
 
-// ✅ Start Server
-app.listen(PORT, () => {
-  console.log(`🚀 Server is running on port ${PORT}`);
+// ✅ أي طلب غير API → رجّع index.html
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "frontend", "index.html"));
 });
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`🧙‍♂️ Dobby is alive 👋 on port ${PORT}`));
