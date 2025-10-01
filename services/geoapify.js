@@ -1,15 +1,21 @@
+// services/geoapify.js
 import axios from "axios";
 
-const GEOAPIFY_API_KEY = process.env.GEOAPIFY_API_KEY;
+const GEOAPIFY_KEY = process.env.GEOAPIFY_KEY;
 
-export async function getRoute(start, end) {
+export async function getRoute(startLat, startLon, endLat, endLon) {
   try {
-    const url = `https://api.geoapify.com/v1/routing?waypoints=${start.lat},${start.lon}|${end.lat},${end.lon}&mode=drive&apiKey=${GEOAPIFY_API_KEY}`;
+    const res = await axios.get("https://api.geoapify.com/v1/routing", {
+      params: {
+        waypoints: `${startLat},${startLon}|${endLat},${endLon}`,
+        mode: "drive",
+        apiKey: GEOAPIFY_KEY
+      }
+    });
 
-    const response = await axios.get(url);
-    return { type: "route", data: response.data };
+    return res.data;
   } catch (err) {
-    console.error("❌ Geoapify error:", err.message);
-    return { error: "Failed to fetch route" };
+    console.error("Geoapify error:", err.response?.data || err.message);
+    return null;
   }
 }
