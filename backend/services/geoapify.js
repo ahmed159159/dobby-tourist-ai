@@ -1,21 +1,15 @@
 import axios from "axios";
 
-// Routing (من - إلى)
-export async function getRoute(from, to) {
-  const url = `https://api.geoapify.com/v1/routing?waypoints=${from.lat},${from.lon}|${to.lat},${to.lon}&mode=drive&apiKey=${process.env.GEOAPIFY_KEY}`;
-  const res = await axios.get(url);
-  return res.data;
-}
+const GEOAPIFY_API_KEY = process.env.GEOAPIFY_API_KEY;
 
-// Geocoding (تحويل اسم مكان لإحداثيات)
-export async function geocode(placeName) {
-  const url = `https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(placeName)}&apiKey=${process.env.GEOAPIFY_KEY}`;
-  const res = await axios.get(url);
-  
-  if (res.data.features.length > 0) {
-    const coords = res.data.features[0].geometry.coordinates;
-    return { lon: coords[0], lat: coords[1] };
+export async function getRoute(start, end) {
+  try {
+    const url = `https://api.geoapify.com/v1/routing?waypoints=${start.lat},${start.lon}|${end.lat},${end.lon}&mode=drive&apiKey=${GEOAPIFY_API_KEY}`;
+
+    const response = await axios.get(url);
+    return { type: "route", data: response.data };
+  } catch (err) {
+    console.error("❌ Geoapify error:", err.message);
+    return { error: "Failed to fetch route" };
   }
-  
-  throw new Error("❌ لم أجد المكان المطلوب");
 }
