@@ -1,15 +1,22 @@
 {
-  "name": "dobby-backend",
+  "name": "dobby-tourist-ai",
   "version": "1.0.0",
+  "description": "Tourist assistant AI (Dobby) using Foursquare, Geoapify and Fireworks APIs",
   "main": "server.js",
   "type": "module",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "dev": "nodemon server.js"
   },
   "dependencies": {
     "axios": "^1.6.7",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
     "express": "^4.18.2"
-  }
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  },
+  "author": "Your Name",
+  "license": "MIT"
 }
