@@ -1,37 +1,34 @@
 import express from "express";
+import { askDobby } from "../services/fireworks.js";
 import { searchPlaces } from "../services/foursquare.js";
-import { getRoute, geocode } from "../services/geoapify.js";
-import { parseQuestion } from "../utils/parser.js";
+import { getRoute } from "../services/geoapify.js";
 
 const router = express.Router();
 
-router.post("/", async (req, res) => {
+router.post("/query", async (req, res) => {
+  const { question, location } = req.body;
+
   try {
-    const { question, location } = req.body;
-    if (!question || !location) {
-      return res.status(400).json({ error: "❌ Missing question or location" });
+    // 🧠 نسأل Dobby AI
+    const dobbyReply = await askDobby(question);
+
+    // 🔎 نضيف بيانات حقيقية لو السؤال فيه مطاعم / كافيه / طريق
+    let data = null;
+
+    if (question.includes("مطعم") || question.includes("كافيه")) {
+      data = await searchPlaces(question, location);
+    } else if (question.includes("طريق") || question.includes("محطة")) {
+      // مثال: destination ثابت (تقدر تخليه dynamic ب geocode)
+      data = await getRoute(location, { lat: 30.0626, lon: 31.2497 });
     }
 
-    // 1) تحليل السؤال
-    const intent = parseQuestion(question);
-
-    let response;
-    if (intent === "places") {
-      // استدعاء Foursquare
-      response = await searchPlaces(location.lat, location.lon, question);
-    } else if (intent === "routing") {
-      // نحتاج "to" من السؤال (مبدئياً نحول اسم لمكان)
-      const to = await geocode(question);
-      response = await getRoute(location, to);
-    } else {
-      response = { message: "🤖 مش قادر أحدد نوع السؤال حالياً" };
-    }
-
-    res.json({ intent, response });
-
+    res.json({
+      answer: dobbyReply,
+      sources: data
+    });
   } catch (err) {
-    console.error(err.message);
-    res.status(500).json({ error: "❌ Internal server error" });
+    console.error("❌ Error in /query:", err);
+    res.status(500).json({ error: "Internal error" });
   }
 });
 
