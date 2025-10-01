@@ -1,17 +1,29 @@
 import express from "express";
-import dotenv from "dotenv";
 import cors from "cors";
-import queryRoutes from "./routes/query.js";
+import dotenv from "dotenv";
 
 dotenv.config();
 
 const app = express();
+const PORT = process.env.PORT || 3000;
+
+// middlewares
 app.use(cors());
 app.use(express.json());
 
-app.use("/api", queryRoutes);
+// ✅ Health check route
+app.get("/", (req, res) => {
+  res.send("Dobby is alive 👋");
+});
 
-const PORT = process.env.PORT || 5000;
+// Example API endpoint (لسه تجريبي)
+app.post("/api/query", (req, res) => {
+  const userMessage = req.body.message || "No message";
+  res.json({
+    reply: `You said: ${userMessage}. Dobby will soon connect to APIs 🤖`
+  });
+});
+
 app.listen(PORT, () => {
-  console.log(`✅ Dobby AI backend running on port ${PORT}`);
+  console.log(`🚀 Dobby backend running on port ${PORT}`);
 });
