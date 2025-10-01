@@ -5,6 +5,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 import { askDobby } from "./services/dobby.js";
+import { searchNearby } from "./services/foursquare.js";
 
 dotenv.config();
 
@@ -23,11 +24,21 @@ app.post("/api/query", async (req, res) => {
   const { messages, lat, lon } = req.body;
 
   try {
-    // نبعت المحادثة كاملة لـ Dobby
-    const reply = await askDobby(messages);
+    const userMsg = messages[messages.length - 1].content.toLowerCase();
+
+    let reply;
+
+    // 🛰️ لو فيه إحداثيات والسؤال فيه near/restaurant → نستخدم Foursquare
+    if (lat && lon && (userMsg.includes("near") || userMsg.includes("restaurant"))) {
+      reply = await searchNearby(lat, lon, "restaurant");
+    } else {
+      // غير كده → نستعمل Dobby AI
+      reply = await askDobby(messages);
+    }
+
     res.json({ reply });
   } catch (error) {
-    console.error(error);
+    console.error("❌ Error in /api/query:", error.message);
     res.status(500).json({ reply: "❌ حصل خطأ في السيرفر." });
   }
 });
