@@ -2,25 +2,19 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Dobby AI Tourist Assistant</title>
+  <title>Dobby AI</title>
   <style>
-    body { font-family: Arial, sans-serif; background: #f8f8f8; }
-    #chat { width: 400px; margin: 30px auto; background: white; border-radius: 10px; padding: 20px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-    #messages { height: 300px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; }
-    .msg { margin: 5px 0; }
-    .user { text-align: right; color: blue; }
-    .bot { text-align: left; color: green; }
-    input { width: 80%; padding: 8px; }
-    button { padding: 8px; }
+    body { font-family: sans-serif; background:#f0f0f0; display:flex; justify-content:center; padding:20px; }
+    #chat { width:400px; background:#fff; border-radius:8px; padding:15px; box-shadow:0 2px 5px rgba(0,0,0,0.2);}
+    .msg { margin:5px 0; }
+    .user { font-weight:bold; color:#333; }
+    .bot { color:#555; }
   </style>
 </head>
 <body>
   <div id="chat">
-    <h2>🧙‍♂️ Dobby Tourist AI</h2>
     <div id="messages"></div>
-    <input type="text" id="userInput" placeholder="Ask Dobby about cafes, routes, etc..." />
-    <button onclick="sendMessage()">Send</button>
+    <input id="input" placeholder="Ask Dobby..." style="width:100%;padding:10px;">
   </div>
   <script src="script.js"></script>
 </body>
