@@ -1,39 +1,33 @@
 // services/dobby.js
-import OpenAI from "openai";
+import axios from "axios";
 
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+const DOBBY_API_KEY = process.env.DOBBY_API_KEY;
 
-/**
- * Ask Dobby (AI travel assistant) a question.
- * @param {Array} messages - Chat history in OpenAI format [{role, content}, ...]
- * @returns {string} AI reply
- */
+// Fireworks AI endpoint
+const FIREWORKS_URL = "https://api.fireworks.ai/inference/v1/chat/completions";
+
 export async function askDobby(messages) {
   try {
-    const completion = await client.chat.completions.create({
-      model: "gpt-4o-mini", // lightweight GPT model
-      messages: [
-        {
-          role: "system",
-          content: `You are Dobby 🧙‍♂️, a helpful travel assistant.
-          Your job:
-          - Answer user travel-related questions (restaurants, cafes, hotels, attractions, navigation).
-          - If external data is needed, generate a hidden API tag like:
-            [API:FOURSQUARE?query=restaurant]
-            [API:FOURSQUARE?query=cafe]
-            [API:GEOAPIFY?to=Eiffel Tower]
-          - Keep responses friendly, short, and clear.`,
-        },
-        ...messages,
-      ],
-      temperature: 0.7,
-    });
+    const response = await axios.post(
+      FIREWORKS_URL,
+      {
+        model: "accounts/fireworks/models/sentientfoundation/dobby-unhinged-llama-3-3-70b-new",
+        messages: messages, // المحادثة كاملة
+        max_tokens: 500,
+        temperature: 0.7
+      },
+      {
+        headers: {
+          "Authorization": `Bearer ${DOBBY_API_KEY}`,
+          "Content-Type": "application/json"
+        }
+      }
+    );
 
-    return completion.choices[0].message.content;
+    // ناخد رد Dobby
+    return response.data.choices[0].message.content;
   } catch (err) {
-    console.error("❌ OpenAI API error:", err.response?.data || err.message);
+    console.error("🔥 Dobby API error:", err.response?.data || err.message);
     return "❌ Dobby had an error while thinking.";
   }
 }
