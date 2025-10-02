@@ -15,6 +15,11 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// ✅ Serve frontend folder
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+app.use(express.static(path.join(__dirname, "frontend")));
+
 // 🧩 API Endpoint
 app.post("/api/query", async (req, res) => {
   const { messages, lat, lon } = req.body;
@@ -22,7 +27,6 @@ app.post("/api/query", async (req, res) => {
   try {
     let reply = await askDobby(messages);
 
-    // 🔎 Look for hidden tag [API:...]
     const apiMatch = reply.match(/\[API:(.*?)\]/);
     if (apiMatch) {
       const command = apiMatch[1];
@@ -43,7 +47,6 @@ app.post("/api/query", async (req, res) => {
         apiResult = await getRoute(lat, lon, to);
       }
 
-      // 🧹 Clean hidden tag + add API results
       reply = reply.replace(/\[API:.*?\]/, "") + "\n\n" + apiResult;
     }
 
@@ -52,6 +55,11 @@ app.post("/api/query", async (req, res) => {
     console.error(error);
     res.status(500).json({ reply: "❌ Server error." });
   }
+});
+
+// ✅ Any non-API route should serve index.html
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "frontend", "index.html"));
 });
 
 const PORT = process.env.PORT || 3000;
