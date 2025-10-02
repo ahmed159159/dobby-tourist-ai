@@ -1,6 +1,8 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
 
 import { askDobby } from "./services/dobby.js";
 import { searchPlaces } from "./services/foursquare.js";
@@ -12,6 +14,11 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// ✅ Serve frontend (production build)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+app.use(express.static(path.join(__dirname, "frontend/dist")));
+
 // نقطة API رئيسية
 app.post("/api/chat", async (req, res) => {
   try {
@@ -19,16 +26,11 @@ app.post("/api/chat", async (req, res) => {
 
     let response;
 
-    // لو المستخدم سأل عن أكل/كافيه/مطاعم → Foursquare
     if (/restaurant|food|cafe|hotel|bar|place/i.test(message)) {
       response = await searchPlaces(message, location);
-    }
-    // لو سأل عن خريطة أو اتجاهات → Geoapify
-    else if (/map|directions|route|navigate/i.test(message)) {
+    } else if (/map|directions|route|navigate/i.test(message)) {
       response = await getMap(message, location);
-    }
-    // غير كده → Dobby AI
-    else {
+    } else {
       response = await askDobby(message);
     }
 
@@ -37,6 +39,11 @@ app.post("/api/chat", async (req, res) => {
     console.error(err);
     res.status(500).json({ reply: "❌ Error processing your request." });
   }
+});
+
+// ✅ fallback for React Router
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "frontend/dist/index.html"));
 });
 
 const PORT = process.env.PORT || 5000;
