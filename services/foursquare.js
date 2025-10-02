@@ -1,4 +1,3 @@
-// services/foursquare.js
 import axios from "axios";
 
 const FOURSQUARE_API_KEY = process.env.FOURSQUARE_API_KEY;
@@ -23,12 +22,9 @@ export async function searchNearby(lat, lon, query = "restaurant") {
       category: place.categories[0]?.name || "N/A",
     }));
 
-    // نحولها لرد نصي للشات
-    if (places.length === 0) {
-      return "😔 مفيش أماكن قريبة اتعثر عليها دلوقتي.";
-    }
+    if (places.length === 0) return "😔 مفيش أماكن قريبة اتعثر عليها دلوقتي.";
 
-    let reply = "📍 أقرب الأماكن ليك:\n";
+    let reply = "";
     places.forEach((p, i) => {
       reply += `\n${i + 1}. ${p.name} (${p.category})\n   ${p.address}`;
     });
