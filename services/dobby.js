@@ -4,23 +4,21 @@ const DOBBY_API_KEY = process.env.DOBBY_API_KEY;
 
 export async function askDobby(messages) {
   try {
-    const response = await axios.post(
+    const res = await axios.post(
       "https://api.fireworks.ai/inference/v1/chat/completions",
       {
         model: "sentientfoundation/dobby-unhinged-llama-3-3-70b-new",
         messages: [
           {
             role: "system",
-            content: `You are Dobby, a funny but smart AI travel assistant.
-- If the user asks for nearby places (restaurants, cafes, hotels, metro...), reply with "[API:FOURSQUARE]" inside your message.
-- If the user asks for directions or routes, reply with "[API:GEOAPIFY]".
-- Otherwise just answer normally.
-⚠️ Important: Always include the tag [API:FOURSQUARE] or [API:GEOAPIFY] exactly if extra info is needed, I will replace it with real API results.`,
+            content: `You are Dobby, a fun and smart travel assistant.
+- If user asks for nearby places (restaurants, cafes, hotels, attractions...), respond with "[API:FOURSQUARE]".
+- If user asks for directions or routes, respond with "[API:GEOAPIFY]".
+- Otherwise, just answer normally.
+Always keep a friendly tone.`,
           },
           ...messages,
         ],
-        max_tokens: 500,
-        temperature: 0.7,
       },
       {
         headers: {
@@ -30,9 +28,9 @@ export async function askDobby(messages) {
       }
     );
 
-    return response.data.choices[0].message.content;
-  } catch (error) {
-    console.error("❌ Error in askDobby:", error.response?.data || error.message);
-    return "Sorry, Dobby could not answer right now 😔";
+    return res.data.choices[0].message.content;
+  } catch (err) {
+    console.error("Dobby API error:", err.response?.data || err.message);
+    return "⚠️ حصل خطأ أثناء التواصل مع Dobby.";
   }
 }
