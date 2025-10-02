@@ -1,7 +1,6 @@
 {
   "name": "dobby-tourist-ai",
   "version": "1.0.0",
-  "description": "Tourist AI assistant using Fireworks + Foursquare + Geoapify",
   "main": "server.js",
   "type": "module",
   "scripts": {
