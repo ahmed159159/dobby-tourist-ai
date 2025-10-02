@@ -4,19 +4,68 @@
   <meta charset="UTF-8" />
   <title>Dobby Chat</title>
   <style>
-    body { font-family: Arial, sans-serif; display: flex; flex-direction: column; height: 100vh; margin: 0; }
-    #chat { flex: 1; padding: 10px; overflow-y: auto; background: #f5f5f5; }
-    #input { display: flex; border-top: 1px solid #ccc; }
-    #input input { flex: 1; padding: 10px; border: none; }
-    #input button { padding: 10px; }
-    .msg { margin: 5px 0; }
-    .user { color: blue; }
-    .bot { color: green; }
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      margin: 0;
+      background: #eef2f7;
+    }
+    #chat {
+      flex: 1;
+      padding: 15px;
+      overflow-y: auto;
+    }
+    .msg {
+      margin: 8px 0;
+      padding: 10px 14px;
+      border-radius: 12px;
+      max-width: 70%;
+      line-height: 1.4;
+      word-wrap: break-word;
+    }
+    .user {
+      background: #007bff;
+      color: white;
+      align-self: flex-end;
+      margin-left: auto;
+    }
+    .bot {
+      background: #e0e0e0;
+      color: #000;
+      align-self: flex-start;
+      margin-right: auto;
+    }
+    #input {
+      display: flex;
+      border-top: 1px solid #ccc;
+      background: #fff;
+    }
+    #text {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      font-size: 16px;
+    }
+    #text:focus {
+      outline: none;
+    }
+    button {
+      padding: 12px 18px;
+      background: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #0056b3;
+    }
   </style>
 </head>
 <body>
   <div id="chat">
-    <div class="msg bot">Welcome! I’m Dobby 🧙‍♂️, your travel assistant. Ask me anything!</div>
+    <div class="msg bot">🤖 Welcome! I’m Dobby 🧙‍♂️, your travel assistant. Ask me anything!</div>
   </div>
   <div id="input">
     <input type="text" id="text" placeholder="Type a message..." />
@@ -36,24 +85,33 @@
       appendMessage("user", text);
       messages.push({ role: "user", content: text });
 
-      const res = await fetch("/api/query", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages })
-      });
+      try {
+        const res = await fetch("/api/query", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ messages })
+        });
 
-      const data = await res.json();
-      appendMessage("bot", data.reply);
-      messages.push({ role: "assistant", content: data.reply });
+        const data = await res.json();
+        appendMessage("bot", data.reply);
+        messages.push({ role: "assistant", content: data.reply });
+      } catch (err) {
+        appendMessage("bot", "❌ Connection error.");
+      }
     }
 
     function appendMessage(role, text) {
       const div = document.createElement("div");
       div.className = "msg " + role;
-      div.textContent = (role === "user" ? "👤 " : "🤖 ") + text;
+      div.textContent = text;
       chat.appendChild(div);
       chat.scrollTop = chat.scrollHeight;
     }
+
+    // Enter key to send
+    document.getElementById("text").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") sendMessage();
+    });
   </script>
 </body>
 </html>
