@@ -2,20 +2,20 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Dobby AI</title>
-  <style>
-    body { font-family: sans-serif; background:#f0f0f0; display:flex; justify-content:center; padding:20px; }
-    #chat { width:400px; background:#fff; border-radius:8px; padding:15px; box-shadow:0 2px 5px rgba(0,0,0,0.2);}
-    .msg { margin:5px 0; }
-    .user { font-weight:bold; color:#333; }
-    .bot { color:#555; }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dobby - Tourist AI</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div id="chat">
-    <div id="messages"></div>
-    <input id="input" placeholder="Ask Dobby..." style="width:100%;padding:10px;">
+  <div class="chat-container">
+    <div id="chatbox" class="chatbox"></div>
+
+    <div class="input-area">
+      <input id="userInput" type="text" placeholder="Type your question..." />
+      <button id="sendBtn">Send</button>
+    </div>
   </div>
+
   <script src="script.js"></script>
 </body>
 </html>
