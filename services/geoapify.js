@@ -1,20 +1,37 @@
+// services/geoapify.js
 import axios from "axios";
 
 const GEOAPIFY_KEY = process.env.GEOAPIFY_KEY;
 
-export async function getRoute(lat1, lon1, lat2, lon2) {
+export async function getRoute(lat, lon, to) {
   try {
-    const url = `https://api.geoapify.com/v1/routing?waypoints=${lat1},${lon1}|${lat2},${lon2}&mode=drive&apiKey=${GEOAPIFY_KEY}`;
-    const res = await axios.get(url);
+    const geocode = await axios.get(
+      "https://api.geoapify.com/v1/geocode/search",
+      {
+        params: { text: to, apiKey: GEOAPIFY_KEY },
+      }
+    );
 
-    const distance = res.data.features[0].properties.distance / 1000;
-    const time = res.data.features[0].properties.time / 60;
+    if (!geocode.data.features.length) return "❌ Destination not found.";
 
-    return `🚗 المسافة تقريباً ${distance.toFixed(
+    const [toLon, toLat] = geocode.data.features[0].geometry.coordinates;
+
+    const route = await axios.get("https://api.geoapify.com/v1/routing", {
+      params: {
+        waypoints: `${lat},${lon}|${toLat},${toLon}`,
+        mode: "drive",
+        apiKey: GEOAPIFY_KEY,
+      },
+    });
+
+    const distance = route.data.features[0].properties.distance / 1000;
+    const time = route.data.features[0].properties.time / 60;
+
+    return `🚗 Route to ${to} → Distance: ${distance.toFixed(
       1
-    )} كم وتاخد حوالي ${time.toFixed(0)} دقيقة.`;
+    )} km, Time: ${time.toFixed(0)} min.`;
   } catch (err) {
     console.error("Geoapify error:", err.response?.data || err.message);
-    return "⚠️ مش قادر اجيب الطريق دلوقتي.";
+    return "❌ Could not fetch route.";
   }
 }
