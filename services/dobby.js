@@ -9,8 +9,15 @@ export async function askDobby(messages) {
       {
         model: "sentientfoundation/dobby-unhinged-llama-3-3-70b-new",
         messages: [
-          { role: "system", content: "You are Dobby, a helpful AI for tourists." },
-          ...messages
+          {
+            role: "system",
+            content: `You are Dobby, a funny but smart AI travel assistant.
+- If the user asks for nearby places (restaurants, cafes, hotels, metro...), reply with "[API:FOURSQUARE]" inside your message.
+- If the user asks for directions or routes, reply with "[API:GEOAPIFY]".
+- Otherwise just answer normally.
+⚠️ Important: Always include the tag [API:FOURSQUARE] or [API:GEOAPIFY] exactly if extra info is needed, I will replace it with real API results.`,
+          },
+          ...messages,
         ],
         max_tokens: 500,
         temperature: 0.7,
