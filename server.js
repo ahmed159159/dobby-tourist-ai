@@ -5,7 +5,8 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 import { askDobby } from "./services/dobby.js";
-import { searchNearby } from "./services/foursquare.js";
+import { searchPlaces } from "./services/foursquare.js";
+import { getRoute } from "./services/geoapify.js";
 
 dotenv.config();
 
@@ -16,36 +17,41 @@ app.use(express.json());
 // إعداد المسار للـ frontend
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
-app.use(express.static(path.join(__dirname, "frontend")));
+app.use(express.static(path.join(__dirname, "../frontend")));
 
 // 🧩 API Endpoint
 app.post("/api/query", async (req, res) => {
   const { messages, lat, lon } = req.body;
 
   try {
-    const userMsg = messages[messages.length - 1].content.toLowerCase();
+    // ⬅️ ننده Dobby
+    const dobbyReply = await askDobby(messages);
 
-    let reply;
-
-    // 🛰️ لو فيه إحداثيات والسؤال فيه near/restaurant → نستخدم Foursquare
-    if (lat && lon && (userMsg.includes("near") || userMsg.includes("restaurant"))) {
-      reply = await searchNearby(lat, lon, "restaurant");
-    } else {
-      // غير كده → نستعمل Dobby AI
-      reply = await askDobby(messages);
+    // لو Dobby طلب Foursquare
+    if (dobbyReply.includes("[API:FOURSQUARE]")) {
+      const places = await searchPlaces("restaurant", lat, lon);
+      const list = places.map(p => `🍴 ${p.name} - ${p.address}`).join("\n");
+      return res.json({ reply: dobbyReply.replace("[API:FOURSQUARE]", list) });
     }
 
-    res.json({ reply });
+    // لو Dobby طلب Geoapify (routing)
+    if (dobbyReply.includes("[API:GEOAPIFY]")) {
+      const route = await getRoute(lat, lon, 29.9773, 31.1325); // مثال: الأهرامات
+      return res.json({ reply: dobbyReply.replace("[API:GEOAPIFY]", route) });
+    }
+
+    // الرد العادي
+    res.json({ reply: dobbyReply });
+
   } catch (error) {
-    console.error("❌ Error in /api/query:", error.message);
-    res.status(500).json({ reply: "❌ حصل خطأ في السيرفر." });
+    console.error("❌ Error:", error.message);
+    res.status(500).json({ reply: "⚠️ حصل خطأ في السيرفر." });
   }
 });
 
 // ✅ أي طلب غير API → يفتح صفحة الشات
 app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "frontend", "index.html"));
+  res.sendFile(path.join(__dirname, "../frontend", "index.html"));
 });
 
 const PORT = process.env.PORT || 3000;
