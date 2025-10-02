@@ -1,6 +1,7 @@
+// services/dobby.js
 import axios from "axios";
 
-const DOBBY_API_KEY = process.env.DOBBY_API_KEY;
+const FIREWORKS_API_KEY = process.env.FIREWORKS_API_KEY;
 
 export async function askDobby(messages) {
   try {
@@ -11,18 +12,24 @@ export async function askDobby(messages) {
         messages: [
           {
             role: "system",
-            content: `You are Dobby, a fun and smart travel assistant.
-- If user asks for nearby places (restaurants, cafes, hotels, attractions...), respond with "[API:FOURSQUARE]".
-- If user asks for directions or routes, respond with "[API:GEOAPIFY]".
-- Otherwise, just answer normally.
-Always keep a friendly tone.`,
+            content: `
+You are Dobby 🧙‍♂️, a friendly travel assistant AI. 
+Rules:
+1. Always respond in a helpful and fun tone.
+2. If the user question requires external info (restaurants, cafes, hotels, attractions, routes, transport):
+   - Add a hidden tag like [API:FOURSQUARE?query=restaurant] or [API:GEOAPIFY?to=pyramids of giza]
+   - Do NOT explain the tag to the user. It’s hidden and for backend use only.
+3. If no external info is required, just respond normally.
+            `,
           },
           ...messages,
         ],
+        max_tokens: 300,
+        temperature: 0.7,
       },
       {
         headers: {
-          Authorization: `Bearer ${DOBBY_API_KEY}`,
+          Authorization: `Bearer ${FIREWORKS_API_KEY}`,
           "Content-Type": "application/json",
         },
       }
@@ -30,7 +37,7 @@ Always keep a friendly tone.`,
 
     return res.data.choices[0].message.content;
   } catch (err) {
-    console.error("Dobby API error:", err.response?.data || err.message);
-    return "⚠️ حصل خطأ أثناء التواصل مع Dobby.";
+    console.error("Dobby error:", err.response?.data || err.message);
+    return "❌ Dobby had an error while thinking.";
   }
 }
