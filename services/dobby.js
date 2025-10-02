@@ -1,38 +1,57 @@
-// services/dobby.js
 import axios from "axios";
+import { searchPlaces } from "./foursquare.js";
 
-const API_KEY = process.env.DOBBY_API_KEY;
+const DOBBY_API_KEY = process.env.DOBBY_API_KEY;
 
-export async function askDobby(messages, lat, lon) {
-  try {
-    // Inject user location into system prompt if available
-    let systemMessage = {
-      role: "system",
-      content: "You are Dobby, a helpful travel assistant. Provide tourism info like restaurants, hotels, cafes, attractions. If user location is provided, use it.",
-    };
-
-    if (lat && lon) {
-      systemMessage.content += ` The user's approximate location is: lat=${lat}, lon=${lon}.`;
-    }
-
-    const res = await axios.post(
-      "https://api.fireworks.ai/inference/v1/chat/completions",
-      {
-        model: "sentientfoundation/dobby-unhinged-llama-3-3-70b-new",
-        messages: [systemMessage, ...messages],
-        max_tokens: 300,
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${API_KEY}`,
-          "Content-Type": "application/json",
-        },
+// 🧠 Dobby يفكر ويقرر
+export async function askDobby(query, lat, lon) {
+  // أول خطوة: نطلب من Dobby نفسه يحدد هل محتاج API إضافي؟
+  const tagRes = await axios.post(
+    "https://api.fireworks.ai/inference/v1/chat/completions",
+    {
+      model: "sentientfoundation/dobby-unhinged-llama-3-3-70b-new",
+      messages: [
+        { role: "system", content: "You are Dobby, a wild travel assistant AI. When asked about places, food, hotels, cafes etc, you should output a simple tag like 'places', 'food', 'hotel' or 'general'." },
+        { role: "user", content: query }
+      ],
+      max_tokens: 10
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${DOBBY_API_KEY}`,
+        "Content-Type": "application/json"
       }
-    );
+    }
+  );
 
-    return res.data.choices[0].message.content;
-  } catch (err) {
-    console.error("Dobby API error:", err.response?.data || err.message);
-    return "❌ Dobby had an error while thinking.";
+  const tag = tagRes.data.choices[0].message.content.trim().toLowerCase();
+
+  let extraData = "";
+  if (["places", "food", "hotel"].includes(tag) && lat && lon) {
+    const results = await searchPlaces(query, lat, lon);
+    if (results.length) {
+      extraData = "Here are some nearby options:\n" + results.map(r => `- ${r.name} (${r.category}) — ${r.address}`).join("\n");
+    }
   }
+
+  // دلوقتي ندي Dobby السياق + أي داتا إضافية
+  const chatRes = await axios.post(
+    "https://api.fireworks.ai/inference/v1/chat/completions",
+    {
+      model: "sentientfoundation/dobby-unhinged-llama-3-3-70b-new",
+      messages: [
+        { role: "system", content: "You are Dobby, a chaotic but helpful travel guide." },
+        { role: "user", content: query + (extraData ? `\n\nExtra info:\n${extraData}` : "") }
+      ],
+      max_tokens: 300
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${DOBBY_API_KEY}`,
+        "Content-Type": "application/json"
+      }
+    }
+  );
+
+  return chatRes.data.choices[0].message.content;
 }
