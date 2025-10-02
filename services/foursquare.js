@@ -1,3 +1,4 @@
+// services/foursquare.js
 import axios from "axios";
 
 const FOURSQUARE_API_KEY = process.env.FOURSQUARE_API_KEY;
@@ -11,7 +12,7 @@ export async function searchPlaces(query, lat, lon) {
       params: {
         query,
         ll: `${lat},${lon}`,
-        radius: 2000,
+        radius: 2000, // meters
         limit: 5,
       },
     });
