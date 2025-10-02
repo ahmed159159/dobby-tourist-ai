@@ -1,52 +1,64 @@
-const messagesDiv = document.getElementById("messages");
-const input = document.getElementById("input");
+const chatbox = document.getElementById("chatbox");
+const userInput = document.getElementById("userInput");
+const sendBtn = document.getElementById("sendBtn");
 
-let conversation = [];
+let messages = []; // full conversation
+let userLocation = { lat: null, lon: null };
 
-// نجيب إحداثيات المستخدم
-let userLat = null;
-let userLon = null;
+// Get location from browser
 navigator.geolocation.getCurrentPosition(
   (pos) => {
-    userLat = pos.coords.latitude;
-    userLon = pos.coords.longitude;
-    console.log("✅ Location detected:", userLat, userLon);
+    userLocation.lat = pos.coords.latitude;
+    userLocation.lon = pos.coords.longitude;
+    console.log("User location:", userLocation);
   },
   () => {
-    console.log("⚠️ Location not available");
+    console.warn("Could not get location");
   }
 );
 
-function addMessage(role, text) {
-  const div = document.createElement("div");
-  div.className = "msg " + role;
-  div.innerText = (role === "user" ? "👤 " : "🤖 ") + text;
-  messagesDiv.appendChild(div);
-  messagesDiv.scrollTop = messagesDiv.scrollHeight;
+function addMessage(sender, text) {
+  const msg = document.createElement("div");
+  msg.classList.add("message", sender);
+  msg.textContent = text;
+  chatbox.appendChild(msg);
+  chatbox.scrollTop = chatbox.scrollHeight;
 }
 
-input.addEventListener("keydown", async (e) => {
-  if (e.key === "Enter") {
-    const text = input.value.trim();
-    if (!text) return;
+async function sendMessage() {
+  const text = userInput.value.trim();
+  if (!text) return;
 
-    addMessage("user", text);
-    input.value = "";
+  addMessage("user", text);
+  userInput.value = "";
 
-    conversation.push({ role: "user", content: text });
+  messages.push({ role: "user", content: text });
 
+  try {
     const res = await fetch("/api/query", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        messages: conversation,
-        lat: userLat,
-        lon: userLon,
+        messages,
+        lat: userLocation.lat,
+        lon: userLocation.lon,
       }),
     });
 
     const data = await res.json();
     addMessage("bot", data.reply);
-    conversation.push({ role: "assistant", content: data.reply });
+
+    messages.push({ role: "assistant", content: data.reply });
+  } catch (err) {
+    console.error("Error:", err);
+    addMessage("bot", "❌ Server error, please try again.");
   }
+}
+
+sendBtn.addEventListener("click", sendMessage);
+userInput.addEventListener("keypress", (e) => {
+  if (e.key === "Enter") sendMessage();
 });
+
+// First welcome message
+addMessage("bot", "Welcome! I’m Dobby 🧙‍♂️, your travel assistant. Ask me anything!");
