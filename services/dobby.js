@@ -1,43 +1,39 @@
 // services/dobby.js
-import axios from "axios";
+import OpenAI from "openai";
 
-const FIREWORKS_API_KEY = process.env.FIREWORKS_API_KEY;
+const client = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
+/**
+ * Ask Dobby (AI travel assistant) a question.
+ * @param {Array} messages - Chat history in OpenAI format [{role, content}, ...]
+ * @returns {string} AI reply
+ */
 export async function askDobby(messages) {
   try {
-    const res = await axios.post(
-      "https://api.fireworks.ai/inference/v1/chat/completions",
-      {
-        model: "sentientfoundation/dobby-unhinged-llama-3-3-70b-new",
-        messages: [
-          {
-            role: "system",
-            content: `
-You are Dobby 🧙‍♂️, a friendly travel assistant AI. 
-Rules:
-1. Always respond in a helpful and fun tone.
-2. If the user question requires external info (restaurants, cafes, hotels, attractions, routes, transport):
-   - Add a hidden tag like [API:FOURSQUARE?query=restaurant] or [API:GEOAPIFY?to=pyramids of giza]
-   - Do NOT explain the tag to the user. It’s hidden and for backend use only.
-3. If no external info is required, just respond normally.
-            `,
-          },
-          ...messages,
-        ],
-        max_tokens: 300,
-        temperature: 0.7,
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${FIREWORKS_API_KEY}`,
-          "Content-Type": "application/json",
+    const completion = await client.chat.completions.create({
+      model: "gpt-4o-mini", // lightweight GPT model
+      messages: [
+        {
+          role: "system",
+          content: `You are Dobby 🧙‍♂️, a helpful travel assistant.
+          Your job:
+          - Answer user travel-related questions (restaurants, cafes, hotels, attractions, navigation).
+          - If external data is needed, generate a hidden API tag like:
+            [API:FOURSQUARE?query=restaurant]
+            [API:FOURSQUARE?query=cafe]
+            [API:GEOAPIFY?to=Eiffel Tower]
+          - Keep responses friendly, short, and clear.`,
         },
-      }
-    );
+        ...messages,
+      ],
+      temperature: 0.7,
+    });
 
-    return res.data.choices[0].message.content;
+    return completion.choices[0].message.content;
   } catch (err) {
-    console.error("Dobby error:", err.response?.data || err.message);
+    console.error("❌ OpenAI API error:", err.response?.data || err.message);
     return "❌ Dobby had an error while thinking.";
   }
 }
