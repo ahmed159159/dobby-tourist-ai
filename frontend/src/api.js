@@ -22,3 +22,9 @@ export async function getStaticMap(lat, lng, zoom = 14, width = 800, height = 40
 const res = await fetch(`${BACKEND}/map/static?lat=${lat}&lng=${lng}&zoom=${zoom}&width=${width}&height=${height}`);
 return res.json();
 }
+
+
+export async function getRoute(fromLat, fromLng, toLat, toLng, mode = 'drive') {
+const res = await fetch(`${BACKEND}/map/route?from=${fromLat},${fromLng}&to=${toLat},${toLng}&mode=${mode}`);
+return res.json();
+}
