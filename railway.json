@@ -3,6 +3,9 @@
     "builder": "NIXPACKS"
   },
   "deploy": {
-    "startCommand": "npm install && npm start"
+    "numReplicas": 1,
+    "startCommand": "npm install && cd backend && npm start",
+    "healthcheckPath": "/",
+    "restartPolicyType": "ON_FAILURE"
   }
 }
