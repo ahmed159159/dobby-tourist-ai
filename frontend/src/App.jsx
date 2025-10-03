@@ -1,26 +1,67 @@
-import React, { useState, useEffect } from "react";
-import ChatBox from "./components/ChatBox";
+import React, { useState } from 'react'
+import { askDobby, findPlaces, getStaticMap, getRoute } from './api'
+import PlacesList from './components/PlacesList'
+import Map from './components/Map'
 
-function App() {
-  const [location, setLocation] = useState(null);
 
-  useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        pos => setLocation({ lat: pos.coords.latitude, lon: pos.coords.longitude }),
-        err => console.error("Location access denied", err)
-      );
-    }
-  }, []);
+export default function App() {
+const [question, setQuestion] = useState('')
+const [places, setPlaces] = useState([])
+const [mapUrl, setMapUrl] = useState(null)
+const [chat, setChat] = useState([])
 
-  return (
-    <div className="flex flex-col items-center justify-center h-screen bg-gradient-to-r from-purple-500 to-indigo-600">
-      <h1 className="text-3xl font-bold text-white mb-6">
-        Welcome! I’m Dobby 🧙‍♂️
-      </h1>
-      <ChatBox location={location} />
-    </div>
-  );
+
+async function handleAsk() {
+// Send the raw question to Dobby. You may prefer to ask Dobby to respond with a JSON structure.
+const ai = await askDobby(question)
+setChat(prev => [...prev, { type: 'text', from: 'dobby', content: JSON.stringify(ai, null, 2) }])
 }
 
-export default App;
+
+async function handleFind() {
+navigator.geolocation.getCurrentPosition(async (pos) => {
+const { latitude, longitude } = pos.coords
+const data = await findPlaces(latitude, longitude)
+const results = data.results || []
+setPlaces(results)
+
+
+if (results.length) {
+const first = results[0]
+const lat = first.geocodes.main.latitude
+const lng = first.geocodes.main.longitude
+const map = await getStaticMap(lat, lng)
+setMapUrl(map.mapUrl)
+}
+
+
+setChat(prev => [...prev, { type: 'text', from: 'system', content: `Found ${results.length} places` }])
+}, (err) => {
+console.error(err)
+alert('Could not get geolocation')
+})
+}
+
+
+async function handleRouteTo(place) {
+navigator.geolocation.getCurrentPosition(async (pos) => {
+const fromLat = pos.coords.latitude
+const fromLng = pos.coords.longitude
+const toLat = place.geocodes.main.latitude
+const toLng = place.geocodes.main.longitude
+
+
+const route = await getRoute(fromLat, fromLng, toLat, toLng, 'drive')
+setChat(prev => [...prev, { type: 'text', from: 'system', content: 'Route returned (check developer console for geojson)' }])
+console.log('route', route)
+})
+}
+
+
+return (
+<div style={{ padding: 20 }}>
+<h1>AI Assistant — Outings</h1>
+
+
+<div>
+<input value={question} onChange={e => setQuestion(e.target.value)} placeholder="اكتب سؤالك لـ D
