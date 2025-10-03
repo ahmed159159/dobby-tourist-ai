@@ -1,67 +1,41 @@
-import React, { useState } from 'react'
-import { askDobby, findPlaces, getStaticMap, getRoute } from './api'
-import PlacesList from './components/PlacesList'
-import Map from './components/Map'
+import React, { useState } from "react";
 
+function App() {
+  const [question, setQuestion] = useState("");
+  const [answer, setAnswer] = useState("");
 
-export default function App() {
-const [question, setQuestion] = useState('')
-const [places, setPlaces] = useState([])
-const [mapUrl, setMapUrl] = useState(null)
-const [chat, setChat] = useState([])
+  const handleAsk = async () => {
+    try {
+      const res = await fetch("/api/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question }),
+      });
+      const data = await res.json();
+      setAnswer(data.answer || "لم يتم العثور على إجابة");
+    } catch (err) {
+      setAnswer("حصل خطأ أثناء التواصل مع الخادم");
+    }
+  };
 
-
-async function handleAsk() {
-// Send the raw question to Dobby. You may prefer to ask Dobby to respond with a JSON structure.
-const ai = await askDobby(question)
-setChat(prev => [...prev, { type: 'text', from: 'dobby', content: JSON.stringify(ai, null, 2) }])
+  return (
+    <div style={{ padding: "20px", direction: "rtl", textAlign: "right" }}>
+      <h1>👋 مساعد الخروجات الذكي</h1>
+      <input
+        value={question}
+        onChange={(e) => setQuestion(e.target.value)}
+        placeholder="اكتب سؤالك لـ Dobby"
+        style={{ padding: "10px", width: "60%", marginRight: "10px" }}
+      />
+      <button onClick={handleAsk} style={{ padding: "10px 20px" }}>
+        اسأل
+      </button>
+      <div style={{ marginTop: "20px" }}>
+        <strong>الإجابة:</strong>
+        <p>{answer}</p>
+      </div>
+    </div>
+  );
 }
 
-
-async function handleFind() {
-navigator.geolocation.getCurrentPosition(async (pos) => {
-const { latitude, longitude } = pos.coords
-const data = await findPlaces(latitude, longitude)
-const results = data.results || []
-setPlaces(results)
-
-
-if (results.length) {
-const first = results[0]
-const lat = first.geocodes.main.latitude
-const lng = first.geocodes.main.longitude
-const map = await getStaticMap(lat, lng)
-setMapUrl(map.mapUrl)
-}
-
-
-setChat(prev => [...prev, { type: 'text', from: 'system', content: `Found ${results.length} places` }])
-}, (err) => {
-console.error(err)
-alert('Could not get geolocation')
-})
-}
-
-
-async function handleRouteTo(place) {
-navigator.geolocation.getCurrentPosition(async (pos) => {
-const fromLat = pos.coords.latitude
-const fromLng = pos.coords.longitude
-const toLat = place.geocodes.main.latitude
-const toLng = place.geocodes.main.longitude
-
-
-const route = await getRoute(fromLat, fromLng, toLat, toLng, 'drive')
-setChat(prev => [...prev, { type: 'text', from: 'system', content: 'Route returned (check developer console for geojson)' }])
-console.log('route', route)
-})
-}
-
-
-return (
-<div style={{ padding: 20 }}>
-<h1>AI Assistant — Outings</h1>
-
-
-<div>
-<input value={question} onChange={e => setQuestion(e.target.value)} placeholder="اكتب سؤالك لـ D
+export default App;
