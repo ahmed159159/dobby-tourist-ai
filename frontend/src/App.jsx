@@ -1,70 +1,64 @@
-import express from "express";
-import fetch from "node-fetch";
-import dotenv from "dotenv";
-dotenv.config();
+import React, { useState } from "react";
 
-const app = express();
-app.use(express.json());
+function App() {
+  const [question, setQuestion] = useState("");
+  const [answer, setAnswer] = useState("");
+  const [places, setPlaces] = useState([]);
 
-// مفاتيح API
-const DOBBY_API_KEY = process.env.DOBBY_API_KEY;
-const FOURSQUARE_API_KEY = process.env.FOURSQUARE_API_KEY;
-const GEOAPIFY_KEY = process.env.GEOAPIFY_KEY;
-
-// ✅ API: استفسار من Dobby + Foursquare
-app.post("/api/ask", async (req, res) => {
-  const { question } = req.body;
-
-  try {
-    // 1. تحليل السؤال عن طريق Dobby
-    const dobbyRes = await fetch(
-      "https://api.fireworks.ai/inference/v1/completions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${DOBBY_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "sentientfoundation/dobby-unhinged-llama-3-3-70b-new",
-          prompt: question,
-          max_tokens: 200,
-        }),
-      }
-    );
-    const dobbyData = await dobbyRes.json();
-    const answer = dobbyData.choices?.[0]?.text || "لم يتم العثور على إجابة";
-
-    // 2. البحث عن أماكن من Foursquare
-    const fsqRes = await fetch(
-      `https://api.foursquare.com/v3/places/search?query=${encodeURIComponent(
-        question
-      )}&near=Cairo,EG&limit=5`,
-      {
-        headers: { Authorization: FOURSQUARE_API_KEY },
-      }
-    );
-    const fsqData = await fsqRes.json();
-    const places = fsqData.results || [];
-
-    // 3. الإرجاع للـ frontend
-    res.json({
-      answer,
-      places: places.map((p) => ({
-        name: p.name,
-        location: p.location,
-        geocodes: p.geocodes,
-      })),
+  // 🧠 إرسال السؤال لـ Dobby
+  const askDobby = async () => {
+    const res = await fetch("/api/ask", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question }),
     });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "حصل خطأ في الخادم" });
-  }
-});
+    const data = await res.json();
+    setAnswer(data.choices?.[0]?.message?.content || "No answer found");
+  };
 
-app.get("/", (req, res) => {
-  res.send("✅ Backend شغال!");
-});
+  // 📍 البحث عن أماكن من Foursquare
+  const searchPlaces = async () => {
+    navigator.geolocation.getCurrentPosition(async (pos) => {
+      const { latitude, longitude } = pos.coords;
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+      const res = await fetch(
+        `/api/places?query=${encodeURIComponent(question)}&lat=${latitude}&lon=${longitude}`
+      );
+
+      const data = await res.json();
+      setPlaces(data.results || []);
+    });
+  };
+
+  return (
+    <div style={{ padding: "20px", fontFamily: "Arial" }}>
+      <h1>🌍 AI Travel Assistant</h1>
+      <input
+        value={question}
+        onChange={(e) => setQuestion(e.target.value)}
+        placeholder="اكتب سؤالك لـ Dobby"
+        style={{ padding: "10px", width: "300px" }}
+      />
+      <button onClick={askDobby}>اسأل Dobby</button>
+      <button onClick={searchPlaces}>ابحث عن أماكن</button>
+
+      <div style={{ marginTop: "20px" }}>
+        <h2>إجابة Dobby:</h2>
+        <p>{answer}</p>
+      </div>
+
+      <div style={{ marginTop: "20px" }}>
+        <h2>📍 أماكن قريبة:</h2>
+        <ul>
+          {places.map((p) => (
+            <li key={p.fsq_id}>
+              {p.name} - {p.location?.address}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+export default App;
